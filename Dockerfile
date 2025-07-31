@@ -20,9 +20,15 @@ WORKDIR /var/www
 # Copy all project files
 COPY . .
 
+# Copy .env file dari .env.example
+RUN cp .env.example .env
+
 # Install PHP (Laravel) dependencies
 RUN composer install --no-dev --optimize-autoloader \
     && chmod -R 775 storage bootstrap/cache
+
+# Generate APP_KEY
+RUN php artisan key:generate
 
 # Install frontend dependencies & build assets
 RUN npm install && npm run build
