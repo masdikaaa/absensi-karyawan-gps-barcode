@@ -13,10 +13,10 @@ RUN npm run build
 # ---------- Stage 2: PHP with Composer ----------
 FROM php:8.3-fpm
 
-# Install PHP & system dependencies
+# Install PHP & system dependencies + extensions
 RUN apt-get update && apt-get install -y \
-    git zip unzip curl libzip-dev libpq-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip
+    git zip unzip curl libzip-dev libpq-dev libonig-dev libxml2-dev libpng-dev \
+    && docker-php-ext-install pdo pdo_mysql zip gd bcmath
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
