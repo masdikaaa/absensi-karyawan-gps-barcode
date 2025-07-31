@@ -1,0 +1,5 @@
+absensi.syslab.my.id {
+  root * /var/www/public
+  php_fastcgi laravel_app:9000
+  file_server
+}

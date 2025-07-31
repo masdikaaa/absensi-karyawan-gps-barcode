@@ -1,0 +1,51 @@
+services:
+  laravel_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    networks:
+      - laravel
+    depends_on:
+      - laravel_db
+
+  laravel_db:
+    image: mysql:8.0
+    container_name: laravel_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: db_absensi_karyawan
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: Andikaferdi11
+      MYSQL_ROOT_PASSWORD: Andikaferdi11
+    volumes:
+      - ./db_data:/var/lib/mysql
+    networks:
+      - laravel
+
+  caddy:
+    image: caddy:2
+    container_name: laravel_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - .:/var/www
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+    depends_on:
+      - laravel_app
+    networks:
+      - laravel
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  laravel:
