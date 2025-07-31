@@ -26,9 +26,6 @@ WORKDIR /var/www
 # Salin semua hasil dari stage node-builder
 COPY --from=node-builder /var/www /var/www
 
-# Copy dan buat file .env dari example
-RUN cp .env.example .env
-
 # Install dependensi Laravel & setup
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader && \
     php artisan key:generate --ansi --force && \
