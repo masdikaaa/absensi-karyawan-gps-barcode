@@ -38,13 +38,17 @@ pipeline {
         stage('Deploy to Docker Server') {
             steps {
                 script {
-                    // Ganti dengan perintah deploy kamu ke 103.168.146.164
                     sh """
-                    ssh -o StrictHostKeyChecking=no root@103.168.146.164 <<EOF
-                        docker pull masdika/absensi-app:latest
-                        docker stop absensi-app || true
-                        docker rm absensi-app || true
-                        docker run -d --name absensi-app -p 80:80 masdika/absensi-app:latest
+                    ssh -o StrictHostKeyChecking=no root@103.168.146.164 <<'EOF'
+                        cd /root/app-absensi || git clone https://github.com/masdikaaa/absensi-karyawan-gps-barcode.git app-absensi && cd app-absensi
+                        git pull origin master
+
+                        echo "Pull image dari DockerHub..."
+                        docker-compose pull
+
+                        echo "Restart aplikasi..."
+                        docker-compose down
+                        docker-compose up -d --remove-orphans
                     EOF
                     """
                 }
