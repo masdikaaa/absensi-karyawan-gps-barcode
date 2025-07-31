@@ -21,25 +21,23 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www
 
-# Copy project & build assets
+# Salin semua hasil dari stage node-builder
 COPY --from=node-builder /var/www /var/www
 
-# Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+# Copy dan buat file .env dari example
+RUN cp .env.example .env
 
-# Buat .env jika belum ada, generate key, dan migrate
-RUN cp .env.example .env && \
+# Install dependensi Laravel & setup
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader && \
     php artisan key:generate --ansi --force && \
     php artisan migrate --force && \
     php artisan db:seed --force || true
 
-# Set proper permissions
+# Set permissions Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache && \
     chmod -R 775 storage bootstrap/cache
 
 EXPOSE 9000
-
 CMD ["php-fpm"]
