@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-# Install dependencies
+# Install system & PHP dependencies
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev \
     gnupg ca-certificates wget \
@@ -14,15 +14,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www
 
-# Copy Laravel project
+# Copy all project files
 COPY . .
-
-# Install frontend dependencies & build assets
-RUN npm install && npm run build
 
 # Install PHP (Laravel) dependencies
 RUN composer install --no-dev --optimize-autoloader \
     && chmod -R 775 storage bootstrap/cache
 
+# Install frontend dependencies & build assets
+RUN npm install && npm run build
