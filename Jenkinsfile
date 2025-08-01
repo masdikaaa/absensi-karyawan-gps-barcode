@@ -1,56 +1,69 @@
 pipeline {
-    agent {
-        label 'local-agent'
-    }
+    agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        SSH_KEY = credentials('ssh-key')
-        GITHUB_TOKEN = credentials('github-token')
+        DOCKER_IMAGE = 'masdika/absensi-karyawan:latest'
+        REMOTE_DOCKER_HOST = 'ssh://root@103.168.146.164'
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Clone Repository') {
             steps {
-                git credentialsId: 'github-token', url: 'https://github.com/masdikaaa/absensi-karyawan-gps-barcode.git'
+                withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
+                    sh '''
+                        rm -rf absensi-karyawan-gps-barcode
+                        git clone https://$GIT_USER:$GIT_PAT@github.com/masdikaaa/absensi-karyawan-gps-barcode.git
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t masdika/absensi-app:latest .'
-                }
+                sh '''
+                    cd absensi-karyawan-gps-barcode
+                    docker build -t $DOCKER_IMAGE .
+                '''
             }
         }
 
         stage('Push to DockerHub') {
             steps {
-                script {
-                    sh """
-                        echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-                        docker push masdika/absensi-app:latest
-                    """
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $DOCKER_IMAGE
+                    '''
                 }
             }
         }
 
-        stage('Deploy to Docker Server') {
+        stage('Deploy to Remote Docker Server') {
             steps {
-                script {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no root@103.168.146.164 <<'EOF'
-                        cd /root/app-absensi || git clone https://github.com/masdikaaa/absensi-karyawan-gps-barcode.git app-absensi && cd app-absensi
-                        git pull origin master
+                sshagent(credentials: ['ssh-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no root@103.168.146.164 '
+                            set -e
+                            if [ ! -d absensi-app ]; then
+                                git clone https://github.com/masdikaaa/absensi-karyawan-gps-barcode.git absensi-app
+                            fi
 
-                        echo "Pull image dari DockerHub..."
-                        docker-compose pull
+                            cd absensi-app
+                            git reset --hard
+                            git checkout master
+                            git pull origin master
 
-                        echo "Restart aplikasi..."
-                        docker-compose down
-                        docker-compose up -d --remove-orphans
-                    EOF
-                    """
+                            # Pastikan file .env ada
+                            if [ ! -f .env ]; then
+                                echo "[INFO] .env tidak ditemukan, membuat dari .env.example"
+                                cp .env.example .env
+                            fi
+
+                            docker compose pull
+                            docker compose down
+                            docker compose up -d --build
+                        '
+                    '''
                 }
             }
         }
