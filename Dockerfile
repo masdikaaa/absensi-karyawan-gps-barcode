@@ -1,22 +1,22 @@
-# ---------- Stage: PHP-FPM with Laravel + Node.js ----------
 FROM php:8.3-fpm
 
-# Install PHP & system dependencies + extensions
+# Install dependencies OS & PHP
 RUN apt-get update && apt-get install -y \
-    git zip unzip curl libzip-dev libpq-dev libonig-dev libxml2-dev libpng-dev gnupg \
+    git unzip zip curl gnupg ca-certificates \
+    libzip-dev libpng-dev libonig-dev libxml2-dev libpq-dev \
     && docker-php-ext-install pdo pdo_mysql zip gd bcmath
 
-# Install Node.js 20.x & npm
+# Install Node.js 20.x
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
-# Install Composer
+# Install Composer dari image resmi
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set workdir
+# Set working directory
 WORKDIR /var/www
 
-# Copy full project code
+# Copy semua file project
 COPY . .
 
 # Copy entrypoint script
