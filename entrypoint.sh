@@ -15,9 +15,13 @@ php artisan key:generate --ansi --force
 php artisan migrate --force
 php artisan db:seed --force
 
-# Jalankan npm build (frontend)
+# Install dan build frontend
 npm install
 npm run build
+
+# ✅ FIX PERMISSION Laravel
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
 # Jalankan php-fpm
 exec "$@"
