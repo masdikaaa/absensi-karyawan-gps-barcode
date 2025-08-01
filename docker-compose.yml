@@ -7,8 +7,6 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
-    env_file:
-      - .env
     networks:
       - laravel
     depends_on:
